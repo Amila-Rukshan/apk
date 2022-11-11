@@ -20,20 +20,69 @@ package main
 import (
 	"os"
 	"os/signal"
+	"time"
+
+	"github.com/wso2/apk/adapter/pkg/discovery/api/wso2/discovery/service/apkmgt"
+	"github.com/wso2/apk/management-server/internal/database"
 
 	"github.com/wso2/apk/management-server/internal/logger"
-	"github.com/wso2/apk/management-server/internal/xds"
-	server "github.com/wso2/apk/management-server/internal/grpc-server"
 )
 
 func main() {
 	logger.LoggerServer.Info("Starting Management server ...")
 	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt)
-	go xds.InitAPKMgtServer()
+	// connect to the postgres database
+	database.ConnectToDB()
+	defer database.CloseDBConn()
+	// go xds.InitAPKMgtServer()
+	// go xds.FeedData()
 	// todo(amaliMatharaarachchi) watch data updates and update snapshot accordingly.
-	go xds.FeedData()
-	go server.StartGRPCServer();
+	// temp data
+	// var arr = []*internal_types.ApplicationEvent{
+	// 	{
+	// 		Label:         "dev",
+	// 		UUID:          "b9850225-c7db-444d-87fd-4feeb3c6b3cc",
+	// 		IsRemoveEvent: false,
+	// 	},
+	// 	{
+	// 		Label:         "stage",
+	// 		UUID:          "6e2dc623-1a23-46a3-86cf-389d63bbbc3e",
+	// 		IsRemoveEvent: false,
+	// 	},
+	// }
+
+	api := &apkmgt.API{
+		Uuid:           "api-uuid-1",
+		Name:           "api-1",
+		Context:        "/web-hook/v1.0.0",
+		Version:        "v1.0.0",
+		Provider:       "webhooke.site",
+		OrganizationId: "org-abc",
+		CreatedBy:      "Bob",
+		CreatedTime:    "2022-11-11T08:36:54.058Z",
+		Definition:     "{\"swagger\": \"json\"}",
+	}
+
+	apiUpdated := &apkmgt.API{
+		Uuid:           "api-uuid-1",
+		Name:           "api-1-new-name",
+		Context:        "/web-hook/v2.0.0",
+		Version:        "v2.0.0",
+		Provider:       "webhooke.site",
+		OrganizationId: "org-abc-updated",
+		UpdatedBy:      "Bob",
+		UpdatedTime:    "2022-12-11T08:36:54.058Z",
+		Definition:     "{\"swagger\": \"json-updated\"}",
+	}
+
+	database.CreateAPI(api)
+	time.Sleep(5 * time.Second)
+	database.UpdateAPI(apiUpdated)
+	time.Sleep(15 * time.Second)
+	// database.DeleteAPI(api)
+	// go xds.AddMultipleApplications(arr)
+	// go server.StartGRPCServer()
 
 OUTER:
 	for {
