@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: cc-adapter
-          image: {{ .Values.wso2.apk.dp.cc.adapter.deployment.image }}
+          image: adapter:0.0.1-SNAPSHOT
           imagePullPolicy: {{ .Values.wso2.apk.dp.cc.adapter.deployment.imagePullPolicy }}
           ports:
             - containerPort: 18000
@@ -56,11 +56,15 @@ spec:
             - mountPath: /home/wso2/check_health.sh
               name: cc-adapter-grpc-probe-script-conf-volume
               subPath: "check_health.sh"
-          readinessProbe:
-            exec:
-              command: [ "sh", "check_health.sh" ]
-            initialDelaySeconds: 8
-            periodSeconds: 5
+            # - mountPath: /home/wso2/conf/config.toml
+            #   name: cc-log-conf-volume
+            #   subPath: config.toml
+          # readinessProbe:
+          #   exec:
+          #     command: [ "sh", "check_health.sh" ]
+          #   initialDelaySeconds: 8
+          #   periodSeconds: 5
+      serviceAccountName: controller-manager
       volumes: 
         - name: cc-adapter-keystore-secret-volume
           secret: 

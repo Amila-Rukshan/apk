@@ -22,6 +22,7 @@ metadata:
   namespace : {{ .Release.Namespace }}
 spec:
   # label keys and values that must match in order to receive traffic for this service
+  type: LoadBalancer
   selector:
 {{ include "apk-helm.pod.selectorLabels" (dict "root" . "app" .Values.wso2.apk.dp.cc.gatewayRuntime.appName ) | indent 4}}
   ports:

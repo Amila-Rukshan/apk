@@ -58,11 +58,11 @@ spec:
             - mountPath: /home/wso2/check_health.sh
               name: cc-enforcer-grpc-probe-script-conf-volume
               subPath: "check_health.sh"
-          readinessProbe:
-            exec:
-              command: [ "sh", "check_health.sh" ]
-            initialDelaySeconds: 5
-            periodSeconds: 5
+          # readinessProbe:
+          #   exec:
+          #     command: [ "sh", "check_health.sh" ]
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
         - name: cc-router
           image: {{ .Values.wso2.apk.dp.cc.gatewayRuntime.deployment.router.image }}
           imagePullPolicy: {{ .Values.wso2.apk.dp.cc.gatewayRuntime.deployment.router.imagePullPolicy }}
@@ -90,15 +90,15 @@ spec:
               mountPath: /home/wso2/security/truststore
             - name: cc-log-conf-volume
               mountPath: /home/wso2/conf/
-          readinessProbe:
-            httpGet:
-              port: 9095
-              path: /ready
-              scheme: HTTPS
-              httpHeaders:
-                - name: Host
-                  value: localhost
-            periodSeconds: 5
+          # readinessProbe:
+          #   httpGet:
+          #     port: 9095
+          #     path: /ready
+          #     scheme: HTTPS
+          #     httpHeaders:
+          #       - name: Host
+          #         value: localhost
+          #   periodSeconds: 5
       volumes: 
         - name: cc-enforcer-keystore-secret-volume
           secret: 
