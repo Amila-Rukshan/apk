@@ -20,8 +20,8 @@ package config
 // Configuration object which is populated with default values.
 var defaultConfig = &Config{
 	ManagementServer: managementServer{
-		XDSPort:    18000,
+		XDSPort:    19000,
 		NodeLabels: []string{"default"},
-		GRPCPort: 8765,
+		GRPCPort:   8765,
 	},
 }

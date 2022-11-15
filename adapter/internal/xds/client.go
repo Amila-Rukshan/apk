@@ -34,6 +34,7 @@ import (
 	stub "github.com/wso2/apk/adapter/pkg/discovery/api/wso2/discovery/service/apkmgt"
 	"github.com/wso2/apk/adapter/pkg/logging"
 
+	"github.com/google/uuid"
 	stringutils "github.com/wso2/apk/adapter/internal/utils"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -60,9 +61,11 @@ var (
 type EventType int
 
 const (
-	APPLICATION_CREATE = 0
-	APPLICATION_UPDATE = 1
-	APPLICATION_DELETE = 2
+	APPLICATION_CREATE                       = 0
+	APPLICATION_UPDATE                       = 1
+	APPLICATION_DELETE                       = 2
+	consumerKeysLimitForApplicationResource  = 10
+	subscriptionsLimitForApplicationResource = 10
 )
 
 type ApplicationEvent struct {
@@ -220,6 +223,9 @@ func addApplicationsToChannel(resp *discovery.DiscoveryResponse) {
 
 		applicationUUID := application.Uuid
 		newApplicationUUIDs = append(newApplicationUUIDs, applicationUUID)
+
+		id := uuid.New()
+		fmt.Println(id.String())
 
 		applicationResource := &cpv1alpha1.Application{
 			ObjectMeta: metav1.ObjectMeta{

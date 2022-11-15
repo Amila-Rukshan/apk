@@ -73,18 +73,103 @@ func init() {
 func FeedData() {
 	config := config.ReadConfigs()
 	logger.LoggerXdsServer.Debug("adding mock data")
-	version := rand.Intn(maxRandomInt)
-	applications := apkmgt_application.Application{
-		Uuid: "apiUUID1",
-		Name: "name1",
+	// version := rand.Intn(maxRandomInt)
+	application1 := apkmgt_application.Application{
+		Uuid:  "app-uuid-1",
+		Name:  "app1",
+		Owner: "admin",
+		Attributes: map[string]string{
+			"attb1": "value1",
+			"attb2": "value2",
+		},
+		ConsumerKeys: []*apkmgt_application.ConsumerKey{
+			{Key: "yef14gh8syDvTt56rdtIHYbjF_Ya", KeyManager: "Resident Key Manager"},
+		},
+		Subscriptions: []*apkmgt_application.Subscription{
+			{Uuid: "a0d73fe1-fdfd-4dd2-a10a-6b0057a7491d",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "e2ae04e7-b886-4985-8d9f-3da5dbf25e69",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "0b49c011-44d0-4698-8184-7caab4b06b4f",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "1325b443-4b35-4999-818f-6762c08740fa",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "cfb14e32-c3f9-44fe-ba65-caaa90a9bd1e",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "c334806b-2493-417b-ad9c-7eae3dab560f",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "fb7c4bdb-ccf7-460a-b2ee-7910179b32c4",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "2e9965fe-964c-4334-a52d-d00ccca537d9",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "1437fdb4-515b-4339-985d-d5b46355de94",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "805367fb-1ed7-4791-a823-69bd40e21271",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "d7c9e07e-90f8-4269-a0ba-074842cc44ab",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "75cb5c25-7268-4398-99d6-e82735517ed1",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "be1ff755-b114-4591-93e4-ad7b844a4f6a",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+			{Uuid: "eea2b16c-41dc-4849-8e28-b6d4cea5c09e",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+		},
 	}
-	newSnapshot, _ := wso2_cache.NewSnapshot(fmt.Sprint(version), map[wso2_resource.Type][]types.Resource{
-		wso2_resource.APKMgtApplicationType: {&applications},
+	application2 := apkmgt_application.Application{
+		Uuid:  "app-uuid-2",
+		Name:  "app2",
+		Owner: "Alice",
+		Attributes: map[string]string{
+			"attb3": "value3",
+			"attb4": "value4",
+		},
+		ConsumerKeys: []*apkmgt_application.ConsumerKey{
+			{Key: "hef14gh8syDvTtvoWYeIHYbjF_Ya", KeyManager: "Resident Key Manager"},
+		},
+		Subscriptions: []*apkmgt_application.Subscription{
+			{Uuid: "ff041d1b-be19-4529-a861-86a79905a1ad",
+				PolicyId:           "Unlimited",
+				SubscriptionStatus: "ACTIVE",
+			},
+		},
+	}
+	newSnapshot, _ := wso2_cache.NewSnapshot(fmt.Sprint(1), map[wso2_resource.Type][]types.Resource{
+		wso2_resource.APKMgtApplicationType: {&application1, &application2},
 	})
 	apiCacheMutex.Lock()
 	// TODO (amaliMatharaarachchi) update relevant adapters with snapshot caches
 	apiCache.SetSnapshot(context.Background(), config.ManagementServer.NodeLabels[0], newSnapshot)
 	apiCacheMutex.Unlock()
+	time.Sleep(10 * time.Second)
 }
 
 func InitAPKMgtServer() {
