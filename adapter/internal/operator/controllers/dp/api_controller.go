@@ -28,6 +28,8 @@ import (
 	"github.com/wso2/apk/adapter/internal/operator/synchronizer"
 	"github.com/wso2/apk/adapter/internal/operator/utils"
 	"github.com/wso2/apk/adapter/pkg/logging"
+	"golang.org/x/exp/maps"
+	k8scorev1 "k8s.io/api/core/v1"
 	k8error "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -90,6 +92,17 @@ func NewAPIController(mgr manager.Manager, operatorDataStore *synchronizer.Opera
 		})
 		return err
 	}
+
+	if err := c.Watch(&source.Kind{Type: &k8scorev1.ConfigMap{}}, handler.EnqueueRequestsFromMapFunc(r.getAPIForAPIDefinitonConfigMap),
+		predicates...); err != nil {
+		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
+			Message:   fmt.Sprintf("error watching ConfigMap resources: %v", err),
+			Severity:  logging.BLOCKER,
+			ErrorCode: 2603,
+		})
+		return err
+	}
+
 	loggers.LoggerAPKOperator.Info("API Controller successfully started. Watching API Objects....")
 	return nil
 }
@@ -140,7 +153,25 @@ func (apiReconciler *APIReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	loggers.LoggerAPKOperator.Debugf("HTTPRoute validation has passed for API CR %s", req.NamespacedName.String())
 
-	// 3. Check whether the Operator Data store contains the received API.
+	// 3. Handle DefinitionFile validation
+	definitionConfigMap, err := validateDefinitionFileRef(ctx, apiReconciler.client, req.Namespace,
+		apiDef.Spec.DefinitionFileRef)
+	if err != nil {
+		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
+			Message:   fmt.Sprintf("error validating DefinitionFile ConfigMap: %v", err),
+			Severity:  logging.TRIVIAL,
+			ErrorCode: 2604,
+		})
+		return ctrl.Result{}, err
+	}
+
+	if definitionConfigMap != nil {
+		// TODO: remove this test log
+		loggers.LoggerAPKOperator.Infof("api definition file loaded: %v", maps.Keys(definitionConfigMap.Data))
+	}
+	loggers.LoggerAPKOperator.Debugf("DefinitionFileRef validation has passed for API CR %s", req.NamespacedName.String())
+
+	// 4. Check whether the Operator Data store contains the received API.
 	cachedAPI, found := apiReconciler.ods.GetAPI(utils.NamespacedName(&apiDef))
 
 	if !found {
@@ -223,6 +254,22 @@ func validateHTTPRouteRefs(ctx context.Context, client client.Client, namespace 
 	return prodHTTPRoute, sandHTTPRoute, nil
 }
 
+// validateDefinitionFileRef validates the DefinitionFileRef for a particular API exists in the controller cache.
+func validateDefinitionFileRef(ctx context.Context, client client.Client, namespace string,
+	definitionFileRef string) (*k8scorev1.ConfigMap, error) {
+	if definitionFileRef == "" {
+		return &k8scorev1.ConfigMap{}, nil
+	}
+
+	definitionFileConfigMap := k8scorev1.ConfigMap{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: definitionFileRef}, &definitionFileConfigMap); err != nil {
+		return nil, fmt.Errorf("definitionFileRef ConfigMap %s in namespace :%s has not found. %s",
+			definitionFileRef, namespace, err.Error())
+	}
+
+	return &definitionFileConfigMap, nil
+}
+
 // getAPIForHTTPRoute triggers the API controller reconcile method based on the changes detected
 // from HTTPRoute objects. If the changes are done for an API stored in the Operator Data store,
 // a new reconcile event will be created and added to the reconcile event queue.
@@ -251,4 +298,9 @@ func (apiReconciler *APIReconciler) getAPIForHTTPRoute(obj client.Object) []reco
 	loggers.LoggerAPKOperator.Infof("Adding reconcile request: %v", req.NamespacedName)
 	requests = append(requests, req)
 	return requests
+}
+
+// TODO: getAPIForAPIDefinitonConfigMap
+func (apiReconciler *APIReconciler) getAPIForAPIDefinitonConfigMap(obj client.Object) []reconcile.Request {
+	return []reconcile.Request{}
 }
