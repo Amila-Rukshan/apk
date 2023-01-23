@@ -52,6 +52,7 @@ const (
 	authenticationAPIIndex      = "authenticationAPIIndex"
 	authenticationResourceIndex = "authenticationResourceIndex"
 	serviceHTTPRouteIndex       = "serviceHTTPRouteIndex"
+	httpRouteAPIPolicyIndex     = "httpRouteAPIPolicyIndex"
 )
 
 // APIReconciler reconciles a API object
@@ -129,6 +130,16 @@ func NewAPIController(mgr manager.Manager, operatorDataStore *synchronizer.Opera
 			Message:   fmt.Sprintf("Error watching Authentication resources: %v", err),
 			Severity:  logging.BLOCKER,
 			ErrorCode: 2612,
+		})
+		return err
+	}
+
+	if err := c.Watch(&source.Kind{Type: &dpv1alpha1.APIPolicy{}}, handler.EnqueueRequestsFromMapFunc(r.getAPIsForAPIPolicy),
+		predicates...); err != nil {
+		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
+			Message:   fmt.Sprintf("Error watching APIPolicy resources: %v", err),
+			Severity:  logging.BLOCKER,
+			ErrorCode: 1234,
 		})
 		return err
 	}
@@ -360,6 +371,37 @@ func (apiReconciler *APIReconciler) getAPIForHTTPRoute(obj k8client.Object) []re
 	return requests
 }
 
+func (apiReconciler *APIReconciler) getAPIsForAPIPolicy(obj k8client.Object) []reconcile.Request {
+	ctx := context.Background()
+	apiPolicy, ok := obj.(*dpv1alpha1.APIPolicy)
+	if !ok {
+		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
+			Message:   fmt.Sprintf("Unexpected object type, bypassing reconciliation: %v", apiPolicy),
+			Severity:  logging.TRIVIAL,
+			ErrorCode: 2670,
+		})
+		return []reconcile.Request{}
+	}
+
+	httpRoute := &gwapiv1b1.HTTPRoute{}
+	if err := apiReconciler.client.Get(ctx, types.NamespacedName{
+		Name: string(apiPolicy.Spec.TargetRef.Name),
+		Namespace: utils.GetNamespace((*gwapiv1b1.Namespace)(apiPolicy.Spec.TargetRef.Namespace),
+			apiPolicy.Namespace),
+	}, httpRoute); err != nil {
+		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
+			Message:   fmt.Sprintf("Unable to find associated HTTPRoutes for APIPolicy: %s", utils.NamespacedName(apiPolicy).String()),
+			Severity:  logging.CRITICAL,
+			ErrorCode: 2671,
+		})
+		return []reconcile.Request{}
+	}
+
+	requests := []reconcile.Request{}
+	requests = append(requests, apiReconciler.getAPIForHTTPRoute(httpRoute)...)
+	return requests
+}
+
 // getAPIsForService triggers the API controller reconcile method based on the changes detected
 // from Service objects. This generates a reconcile request for a API looking up two indexes;
 // serviceHTTPRouteIndex and httpRouteAPIIndex in that order.
@@ -517,6 +559,22 @@ func addIndexes(ctx context.Context, mgr manager.Manager) error {
 					types.NamespacedName{
 						Namespace: authentication.Namespace,
 						Name:      string(authentication.Spec.TargetRef.Name),
+					}.String())
+			}
+			return httpRoutes
+		}); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &dpv1alpha1.APIPolicy{}, httpRouteAPIPolicyIndex,
+		func(rawObj k8client.Object) []string {
+			apiPolicy := rawObj.(*dpv1alpha1.APIPolicy)
+			var httpRoutes []string
+			if apiPolicy.Spec.TargetRef.Kind == constants.KindHTTPRoute {
+				httpRoutes = append(httpRoutes,
+					types.NamespacedName{
+						Namespace: apiPolicy.Namespace,
+						Name:      string(apiPolicy.Spec.TargetRef.Name),
 					}.String())
 			}
 			return httpRoutes
