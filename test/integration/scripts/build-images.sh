@@ -16,12 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# get the SHA of the commit that the pull request was merged into
-merge_commit_sha=$(git merge-base HEAD master)
+git diff --name-only HEAD^ HEAD
 
-# get the diff between the merge commit and the pull request head
-diff_output=$(git diff --name-status $merge_commit_sha HEAD)
-
-# output the diff output
-echo "The following files have been changed between the merged commit and the pull request head:"
-echo "$diff_output"
+# Build image
+# gradle build -Pdocker_image_name=wso2/adapter -Pversion=latest
