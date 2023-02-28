@@ -16,16 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Build docker images for data plane components if there are changes in the PR
-# get the root directory names of the checked out Git repository
-root_dirs=$(git rev-parse --show-toplevel)
+# get the SHA of the commit that the pull request was merged into
+merge_commit_sha=$(git merge-base HEAD master)
 
-# get the directories that have changes
-changed_dirs=$(git diff --dirstat=files --diff-filter=d --no-renames HEAD | awk '{print $2}')
+# get the diff between the merge commit and the pull request head
+diff_output=$(git diff --name-status $merge_commit_sha HEAD)
 
-# combine the root directories and changed directories
-all_dirs="$root_dirs $changed_dirs"
-
-# output the directories
-echo "The directories in the Git repository are:"
-echo "$all_dirs"
+# output the diff output
+echo "The following files have been changed between the merged commit and the pull request head:"
+echo "$diff_output"
