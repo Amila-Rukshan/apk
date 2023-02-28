@@ -26,6 +26,12 @@ allprojects {
     version = project.version
 }
 
+tasks.register('build_images', Exec).configure { 
+    group 'integration'
+    description 'Build images to components with code changes'
+    commandLine 'sh', "$rootDir/scripts/build-images.sh"
+}
+
 tasks.register('cluster_setup', Exec).configure { 
     group 'integration'
     description 'Sets up a kind cluster'
@@ -61,6 +67,10 @@ tasks.named('integration_test').configure {
 }
 
 tasks.named('cluster_setup').configure { 
+    dependsOn build_images
+}
+
+tasks.named('build_images').configure { 
     dependsOn go_revive_run
 }
 
