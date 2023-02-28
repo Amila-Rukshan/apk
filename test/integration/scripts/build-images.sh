@@ -17,4 +17,15 @@
 # under the License.
 
 # Build docker images for data plane components if there are changes in the PR
-git status
+# get the root directory names of the checked out Git repository
+root_dirs=$(git rev-parse --show-toplevel)
+
+# get the directories that have changes
+changed_dirs=$(git diff --dirstat=files --diff-filter=d --no-renames HEAD | awk '{print $2}')
+
+# combine the root directories and changed directories
+all_dirs="$root_dirs $changed_dirs"
+
+# output the directories
+echo "The directories in the Git repository are:"
+echo "$all_dirs"
