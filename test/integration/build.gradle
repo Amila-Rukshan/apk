@@ -26,6 +26,12 @@ allprojects {
     version = project.version
 }
 
+tasks.register('build_components', Exec).configure { 
+    group 'integration'
+    description 'Build the gateway components if changes are detected'
+    commandLine 'sh', "$rootDir/scripts/build-components.sh"
+}
+
 tasks.register('cluster_setup', Exec).configure { 
     group 'integration'
     description 'Sets up a kind cluster'
@@ -61,6 +67,10 @@ tasks.named('integration_test').configure {
 }
 
 tasks.named('cluster_setup').configure { 
+    dependsOn build_components
+}
+
+tasks.named('build_components').configure { 
     dependsOn go_revive_run
 }
 
