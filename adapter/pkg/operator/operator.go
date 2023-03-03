@@ -163,7 +163,7 @@ func InitOperator() {
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		loggers.LoggerAPKOperator.ErrorC(logging.ErrorDetails{
-			Message:   fmt.Sprintf("problem running manager abcd: %v", err),
+			Message:   fmt.Sprintf("problem running manager abcdef: %v", err),
 			Severity:  logging.BLOCKER,
 			ErrorCode: 2600,
 		})
