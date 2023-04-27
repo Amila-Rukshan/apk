@@ -76,55 +76,15 @@ var (
 	// commonTemplate contains common lua code for request and response intercept
 	// Note: this template only applies if request or response interceptor is enabled
 	commonTemplate = `
- local interceptor = require 'home.wso2.interceptor.lib.interceptor'
- local utils = require 'home.wso2.interceptor.lib.utils'
- {{if .IsResponseFlowEnabled -}} {{/* resp_flow details are required in req flow if request info needed in resp flow */}}
- local resp_flow_list = {  
-	 {{- range $key, $value := .ResponseFlow -}} 
-		 {{- $key }} = {invocationContext = {{$value.Include.InvocationContext}}, requestHeaders = {{$value.Include.RequestHeaders}}, requestBody = {{$value.Include.RequestBody}}, requestTrailer = {{$value.Include.RequestTrailer}}, responseHeaders = {{$value.Include.ResponseHeaders}}, responseBody = {{$value.Include.ResponseBody}}, responseTrailers = {{$value.Include.ResponseTrailers}}}, 
-	 {{- end -}}}
- {{- else -}}local resp_flow_list = {}{{end}} {{/* if resp_flow disabled no need req info in resp path */}}
- local inv_context = {
-	 organizationId = "{{.Context.OrganizationID}}",
-	 basePath = "{{.Context.BasePath}}",
-	 supportedMethods = "{{.Context.SupportedMethods}}",
-	 apiName = "{{.Context.APIName}}",
-	 apiVersion = "{{.Context.APIVersion}}",
-	 pathTemplate = "{{.Context.PathTemplate}}",
-	 vhost = "{{.Context.Vhost}}",
-	 clusterName = "{{.Context.ClusterName}}",
- }
- local wire_log_config = {
-	 log_body_enabled = {{ .LogConfig.LogBodyEnabled }},
-	 log_headers_enabled = {{ .LogConfig.LogHeadersEnabled }},
-	 log_trailers_enabled = {{ .LogConfig.LogTrailersEnabled }}
- }
  `
 	requestInterceptorTemplate = `
- local req_flow_list = {  
-	 {{- range $key, $value := .RequestFlow -}} 
-		 {{- $key }} = {invocationContext = {{$value.Include.InvocationContext}}, requestHeaders = {{$value.Include.RequestHeaders}}, requestBody = {{$value.Include.RequestBody}}, requestTrailer = {{$value.Include.RequestTrailer}}}, 
-	 {{- end -}}}
- local req_call_config = {  
-	 {{- range $key, $value := .RequestFlow -}} 
-		 {{- $key }} = {cluster_name = "{{$value.ExternalCall.ClusterName}}", timeout = {{$value.ExternalCall.Timeout}}, authority_header = "{{$value.ExternalCall.AuthorityHeader}}"}, 
-	 {{- end -}}}
  function envoy_on_request(request_handle)
-	 interceptor.handle_request_interceptor(
-		 request_handle, req_call_config, req_flow_list, resp_flow_list, inv_context, false, wire_log_config
-	 )
+ 	request_handle:headers():add("test-header", "test")
  end
  `
 
 	responseInterceptorTemplate = `
- local res_call_config = {  
-	 {{- range $key, $value := .ResponseFlow -}} 
-		 {{- $key }} = {cluster_name = "{{$value.ExternalCall.ClusterName}}", timeout={{$value.ExternalCall.Timeout}}, authority_header = "{{$value.ExternalCall.AuthorityHeader}}"}, 
-	 {{- end -}}}
  function envoy_on_response(response_handle)
-	 interceptor.handle_response_interceptor(
-		 response_handle, res_call_config, resp_flow_list, wire_log_config
-	 )
  end
  `
 	// defaultRequestInterceptorTemplate is the template that is applied when request flow is disabled
@@ -140,7 +100,6 @@ var (
 	// defaultResponseInterceptorTemplate is the template that is applied when response flow is disabled
 	defaultResponseInterceptorTemplate = `
  function envoy_on_response(response_handle)
-	 utils.wire_log(response_handle, " << response body << ", " << response headers << ", " << response trailers << ", wire_log_config)
  end
  `
 	// emptyRequestInterceptorTemplate is the template that is applied when request flow and response flow is disabled
